@@ -18,16 +18,16 @@
 //   response.send("Hello from Firebase!");
 // });
 
-const functions = require("firebase-functions");
-const axios = require("axios");
+import functions = require("firebase-functions");
+import axios from "axios";
 const LINE_MESSAGING_API = "https://api.line.me/v2/bot";
 const LINE_HEADER = {
     "Content-Type": "application/json",
-    Authorization: "Bearer WBx2HaUdrw2NW2RCizYfRiKA2O/aiwKkuL4xXJK5vsuTe8cEhOLwMdWJ/zUmtkh23/MTXf4tRIvnGvrTOvjO98Y+0TrHJ5U4yzCaRYjBP84bsn/mJvKeQftFSdfh4uQELBF/kEhg2Bh2hDzi5MLAvQdB04t89/1O/w1cDnyilFU="
+    "Authorization": "Bearer WBx2HaUdrw2NW2RCizYfRiKA2O/aiwKkuL4xXJK5vsuTe8cEhOLwMdWJ/zUmtkh23/MTXf4tRIvnGvrTOvjO98Y+0TrHJ5U4yzCaRYjBP84bsn/mJvKeQftFSdfh4uQELBF/kEhg2Bh2hDzi5MLAvQdB04t89/1O/w1cDnyilFU="
 };
-const { Configuration, OpenAIApi } = require("openai");
+import { Configuration, OpenAIApi } from "openai";
 const configuration = new Configuration({
-    apiKey: "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",
+    apiKey: "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"
 });
 const openai = new OpenAIApi(configuration);
 
@@ -38,14 +38,14 @@ exports.LineWebhook = functions.region("asia-northeast1").https.onRequest(async 
         // Chatbot จะทำงานเฉพาะข้อความ Text ที่ถูกส่งออกมาจากกลุ่มไลน์เท่านั้น
         if (event.source.type === "group" && event.type === "message" && event.message.type === "text") {
             const message = event.message.text;
-            // วิธีการเรียกให้ Chatbot ทำงานในกลุ่มไลน์คือพิมพ์ จ่าวิส:... 
-            if (message.includes('จ่าวิส')) {
+            // วิธีการเรียกให้ Chatbot ทำงานในกลุ่มไลน์คือพิมพ์ จ่าวิส:...
+            if (message.includes("จ่าวิส")) {
                 // แกะเอาคำถามที่อยู่หลัง : เพื่อส่งให้ ChatGPT
-                const question = message.split(':')[1];
+                const question = message.split(":")[1];
                 const response = await openaiRequest(question);
                 const payload = {
                     type: "text",
-                    text: response,
+                    text: response
                 };
                 await reply(event.replyToken, payload);
             }
@@ -54,20 +54,20 @@ exports.LineWebhook = functions.region("asia-northeast1").https.onRequest(async 
     return res.end();
 });
 
-// เรียกใช้งาน ChatGPT-3 
-const openaiRequest = async (message: { role: string; content: any }[]) => {
+// เรียกใช้งาน ChatGPT-3
+const openaiRequest = async (message: any) => {
     const completion = await openai.createChatCompletion({
         model: "gpt-3.5-turbo",
         messages: [
             {
                 role: "user",
-                content: message,
-            },
-        ],
+                content: message
+            }
+        ]
     });
     console.log(JSON.stringify(completion.data));
-    return completion.data.choices[0].message.content;
-}
+    return completion.data.choices[0].message?.content;
+};
 
 const reply = async (replyToken: string, payload: { type: string; text: any }) => {
     await axios({
