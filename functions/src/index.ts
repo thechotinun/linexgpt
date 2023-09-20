@@ -20,14 +20,15 @@
 
 import functions = require("firebase-functions");
 import axios from "axios";
-const LINE_MESSAGING_API = "https://api.line.me/v2/bot";
+const KEYWORD = functions.config().line.keyword;
+const LINE_MESSAGING_API = functions.config().line.messagingapi;
 const LINE_HEADER = {
     "Content-Type": "application/json",
-    "Authorization": "Bearer WBx2HaUdrw2NW2RCizYfRiKA2O/aiwKkuL4xXJK5vsuTe8cEhOLwMdWJ/zUmtkh23/MTXf4tRIvnGvrTOvjO98Y+0TrHJ5U4yzCaRYjBP84bsn/mJvKeQftFSdfh4uQELBF/kEhg2Bh2hDzi5MLAvQdB04t89/1O/w1cDnyilFU="
+    "Authorization": `Bearer ${functions.config().line.channelaccesstoken}`
 };
 import { Configuration, OpenAIApi } from "openai";
 const configuration = new Configuration({
-    apiKey: "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"
+    apiKey: functions.config().openai.token
 });
 const openai = new OpenAIApi(configuration);
 
@@ -39,7 +40,7 @@ exports.LineWebhook = functions.region("asia-northeast1").https.onRequest(async 
         if (event.source.type === "group" && event.type === "message" && event.message.type === "text") {
             const message = event.message.text;
             // วิธีการเรียกให้ Chatbot ทำงานในกลุ่มไลน์คือพิมพ์ จ่าวิส:...
-            if (message.includes("จ่าวิส")) {
+            if (message.includes(KEYWORD)) {
                 // แกะเอาคำถามที่อยู่หลัง : เพื่อส่งให้ ChatGPT
                 const question = message.split(":")[1];
                 const response = await openaiRequest(question);
@@ -55,7 +56,7 @@ exports.LineWebhook = functions.region("asia-northeast1").https.onRequest(async 
 });
 
 // เรียกใช้งาน ChatGPT-3
-const openaiRequest = async (message: any) => {
+const openaiRequest = async (message: string) => {
     const completion = await openai.createChatCompletion({
         model: "gpt-3.5-turbo",
         messages: [
@@ -69,7 +70,7 @@ const openaiRequest = async (message: any) => {
     return completion.data.choices[0].message?.content;
 };
 
-const reply = async (replyToken: string, payload: { type: string; text: any }) => {
+const reply = async (replyToken: string, payload: { type: string; text: string | undefined }) => {
     await axios({
         method: "post",
         url: `${LINE_MESSAGING_API}/message/reply`,
